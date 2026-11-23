@@ -215,7 +215,6 @@ the stated parametric landscape.
   are simulated dollars under the parametric landscape.
 - **Single split, no cross-validation.** One GBM fit on 80k rows is
   already minutes on CPU; the reported numbers are one seeded split.
-- No real adtech job experience is claimed. This is a personal project.
 
 ## Project layout
 
