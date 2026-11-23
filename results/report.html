@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Adtech CTR + Auction — Results</title>
+<style>body{font-family:sans-serif;max-width:900px;margin:2em auto;padding:0 1em}
+table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px 10px;text-align:left}
+img{max-width:100%}</style></head><body>
+<h1>Adtech CTR Prediction + Second-Price Auction</h1>
+<p>Personal project by Santhosh Chakilam. Data: Criteo Display Advertising
+Challenge 100k-row sample (Microsoft Recommenders <code>dac_sample</code>).
+100000 rows loaded (CTR 0.2266); train 80000 /
+test 20000 stratified random split (seed 42). Value per click
+$2.50 (assumed).</p>
+<h2>CTR prediction (held-out test set)</h2>
+<table><tr><th>Model</th><th>AUC</th><th>Log loss</th><th>Brier</th><th>ECE</th></tr>
+<tr><td>Logistic regression</td><td>0.7467</td><td>0.4744</td>
+<td>0.1538</td><td>0.0073</td></tr>
+<tr><td>HistGradientBoosting</td><td>0.7625</td><td>0.4610</td>
+<td>0.1485</td><td>0.0112</td></tr></table>
+<p><img src="roc_comparison.svg" alt="ROC curves"></p>
+<p><img src="reliability.svg" alt="Reliability curve"></p>
+<h2>Second-price auction (GBM pCTR, LogNormal bid landscape)</h2>
+<p>Competing-bid landscape: LogNormal(mu=-0.897,
+sigma=0.894), median competing bid
+$0.408. The landscape is a
+parametric model calibrated to our own value-based bids — there is no bid
+column in the Criteo sample, so this is NOT validated against real auction logs.</p>
+<table><tr><th>Run</th><th>Spend</th><th>Budget</th><th>Wins</th>
+<th>Pred win rate</th><th>Actual win rate</th><th>Abs error</th><th>Decile MAE</th></tr>
+<tr><td>Unconstrained</td><td>$3289.26</td><td>—</td><td>10116</td>
+<td>0.509</td><td>0.506</td>
+<td>0.0037</td><td>0.0081</td></tr>
+<tr><td>Paced (budget $1644.63)</td><td>$1644.34</td>
+<td>$1644.63</td><td>6428</td>
+<td>0.335</td><td>0.321</td>
+<td>0.0138</td><td>0.0144</td></tr>
+<tr><td>Brand-safe paced</td><td>$1644.07</td>
+<td>$1644.63</td><td>6347</td>
+<td>0.344</td><td>0.317</td>
+<td>0.0263</td><td>0.0264</td></tr>
+<tr><td>Ad-load-capped paced (cap 292/bucket)</td>
+<td>$1644.31</td>
+<td>$1644.63</td><td>6400</td>
+<td>0.344</td><td>0.320</td>
+<td>0.0235</td><td>0.0239</td></tr></table>
+<p>Brand safety blocked 795 impressions
+(synthetic categories: political, firearms, tobacco). The ad-load cap
+suppressed 237 would-be wins.</p>
+<p><img src="win_rate_forecast.svg" alt="Win-rate forecast vs simulated"></p>
+<p><img src="pacing.svg" alt="Pacing trajectory"></p>
+<h2>Reserve-price sweep (unconstrained auction)</h2>
+<table><tr><th>Floor ($)</th><th>Revenue ($)</th><th>Wins</th>
+<th>Avg clearing price ($)</th></tr>
+<tr><td>0.00</td><td>3289.26</td><td>10116</td><td>0.325</td></tr><tr><td>0.10</td><td>3317.05</td><td>10075</td><td>0.329</td></tr><tr><td>0.20</td><td>3474.28</td><td>9677</td><td>0.359</td></tr><tr><td>0.30</td><td>3689.80</td><td>8931</td><td>0.413</td></tr><tr><td>0.40</td><td>3863.08</td><td>7997</td><td>0.483</td></tr><tr><td>0.50</td><td>3944.56</td><td>7006</td><td>0.563</td></tr><tr><td>0.60</td><td>3909.50</td><td>6028</td><td>0.649</td></tr><tr><td>0.70</td><td>3826.90</td><td>5189</td><td>0.738</td></tr><tr><td>0.80</td><td>3675.82</td><td>4434</td><td>0.829</td></tr><tr><td>1.00</td><td>3244.16</td><td>3191</td><td>1.017</td></tr></table>
+<p>Best floor $0.50 at revenue
+$3944.56 vs $3289.26 with no floor.</p>
+<p><img src="reserve_sweep.svg" alt="Reserve-price sweep"></p>
+<h2>Honest limits</h2>
+<ul><li>The bid landscape is a parametric LogNormal model, not measured
+from real auctions; forecast error is measured against Monte Carlo
+simulation under that model.</li>
+<li>Advertiser categories are synthetic (seeded RNG, plausible
+shares); the Criteo sample has no category column. The brand-safety
+filter's mechanics are real, the labels are not measured.</li>
+<li>Ad-load cap (35% of a bucket's impressions) and reserve-price
+floors are policy choices applied to the simulator, not production
+measurements; spend and clearing prices are simulated dollars.</li>
+<li>Forward-in-time split (rows are chronologically ordered, train is
+the first 80k rows, test the next 20k); no timestamp column exists, so
+the split is by row order only.</li>
+<li>Single 80k/20k split of the 100k-row sample; results on the full
+45.8M-row Criteo train set are NOT claimed (GPU / bigger-machine work).</li>
+<li>Hashed categoricals carry no semantics; rare levels are folded into
+OTHER for both models (top-50 linear, top-254 GBM).</li></ul>
+</body></html>
